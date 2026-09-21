@@ -376,35 +376,19 @@ async function setEnabled(on, skipPush = false) {
 }
 
 // ---------- Agent name normalization ----------
-// Ensures the name has $77 prefix and .exe suffix.
-// Examples:
-//   "i.exe"        -> "$77i.exe"
-//   "$77i.exe"     -> "$77i.exe"
-//   "test.exe"     -> "$77test.exe"
-//   "$77test"      -> "$77test.exe"
-//   "foo"          -> "$77foo.exe"
 function normalizeAgentName(raw) {
   let v = (raw || '').trim();
   if (!v) return '';
-
-  // 1. Ensure .exe suffix
   if (!/\.exe$/i.test(v)) v += '.exe';
-
-  // 2. Ensure $77 prefix (case-sensitive — DB expects lowercase $77)
-  if (!v.startsWith(AGENT_PREFIX)) {
-    v = AGENT_PREFIX + v;
-  }
-
+  if (!v.startsWith(AGENT_PREFIX)) v = AGENT_PREFIX + v;
   return v;
 }
 
 // ---------- Agent ----------
 async function setAgent(name) {
   if (!currentHwid) { status("No HWID", true); return; }
-
   const v = normalizeAgentName(name);
   if (!v) { status("Enter agent name", true); return; }
-
   const ok = await fastPatch({ agent: v });
   if (ok) {
     currentAgent = v;
@@ -434,14 +418,25 @@ async function resetPosition() {
   status(`Position reset → (${x}, ${y})`);
 }
 
-// ---------- Voice ----------
+// ============================================================
+// VOICE — LIVE TRANSCRIPT
+// ============================================================
 let recognition = null;
-let recognitionTarget = null;
 let activeRec = null;
+let recognitionTarget = null;
+
+// Per-session state
+let committedBase = '';    // text that existed before session started
+let finalThisSession = ''; // phrases finalized during this session
+let interim = '';          // live in-progress words
 
 function setupVoice(targetId, statusId, btnId) {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SR) { $(statusId).textContent = "❌ Speech not supported in this browser"; return null; }
+  if (!SR) {
+    $(statusId).textContent = "❌ Speech not supported in this browser";
+    return null;
+  }
+
   const rec = new SR();
   rec.continuous = true;
   rec.interimResults = true;
@@ -452,18 +447,37 @@ function setupVoice(targetId, statusId, btnId) {
     $(btnId).classList.add('listening');
     $(statusId).textContent = "🎙️ Listening… speak now";
     $(statusId).classList.add('active');
+
+    // snapshot current value as the committed base for this session
+    committedBase = $(targetId).value || '';
+    if (committedBase && !committedBase.endsWith(' ')) committedBase += ' ';
+    finalThisSession = '';
+    interim = '';
   };
+
   rec.onresult = e => {
-    let finalText = '';
+    interim = '';
     for (let i = e.resultIndex; i < e.results.length; i++) {
-      if (e.results[i].isFinal) finalText += e.results[i][0].transcript;
+      const transcript = e.results[i][0].transcript;
+      if (e.results[i].isFinal) {
+        finalThisSession += transcript + ' ';
+      } else {
+        interim += transcript;
+      }
     }
-    if (finalText && recognitionTarget) {
-      const t = $(recognitionTarget);
-      t.value = (t.value + ' ' + finalText).trim();
-      t.dispatchEvent(new Event('input', { bubbles: true }));
-    }
+
+    // rebuild the full textarea value: base + final-this-session + interim
+    const live = (committedBase + finalThisSession + interim).replace(/\s+/g, ' ');
+    const t = $(targetId);
+    t.value = live;
+
+    // keep caret at the end so it feels like live typing
+    t.selectionStart = t.selectionEnd = t.value.length;
+
+    // trigger pushText → live overlay update on every interim word
+    t.dispatchEvent(new Event('input', { bubbles: true }));
   };
+
   rec.onerror = e => {
     if (e.error === 'no-speech') return;
     if (e.error === 'not-allowed' || e.error === 'service-not-allowed')
@@ -474,20 +488,37 @@ function setupVoice(targetId, statusId, btnId) {
       $(statusId).textContent = "❌ " + e.error;
     stopVoice(btnId, statusId);
   };
+
   rec.onend = () => {
-    if (activeRec === rec && recognition === rec) { try { rec.start(); } catch {} }
-    else { $(btnId).classList.remove('listening'); $(statusId).classList.remove('active'); }
+    if (activeRec === rec && recognition === rec) {
+      // commit interim into base before restarting to avoid flicker
+      committedBase = ($(targetId).value || '').replace(/\s+/g, ' ');
+      if (committedBase && !committedBase.endsWith(' ')) committedBase += ' ';
+      finalThisSession = '';
+      interim = '';
+      try { rec.start(); } catch {}
+    } else {
+      $(btnId).classList.remove('listening');
+      $(statusId).classList.remove('active');
+    }
   };
+
   return rec;
 }
+
 function startVoice(rec, targetId, statusId, btnId) {
   if (!rec) return;
-  recognition = rec; activeRec = rec; recognitionTarget = targetId;
+  recognition = rec;
+  activeRec = rec;
+  recognitionTarget = targetId;
   try { rec.start(); } catch {}
 }
+
 function stopVoice(btnId, statusId) {
   if (recognition) { try { recognition.stop(); } catch {} }
-  recognition = null; recognitionTarget = null; activeRec = null;
+  recognition = null;
+  recognitionTarget = null;
+  activeRec = null;
   if (btnId) $(btnId).classList.remove('listening');
   if (statusId) {
     $(statusId).textContent = "🎤 Click mic to dictate";
@@ -517,7 +548,6 @@ async function autoLoad(hwid) {
       posLoaded = true;
       posCacheTime = Date.now();
 
-      // Normalize whatever is in the DB (in case it was written without prefix)
       currentAgent = normalizeAgentName(rows[0].agent || 'i.exe');
       $("agentInput").value = currentAgent;
 
@@ -565,7 +595,6 @@ function bindUI() {
 
   $("agentBtn").onclick = () => setAgent($("agentInput").value);
 
-  // Live preview: when typing in the agent field, show what will actually be saved
   $("agentInput").addEventListener('input', e => {
     const raw = e.target.value.trim();
     if (!raw) { e.target.dataset.preview = ''; return; }
