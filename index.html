@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Anwer On Screen</title>
+<title>QZK Control</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -276,7 +276,6 @@ textarea::placeholder{color:#a3acbb}
 const SUPABASE_URL = "https://rfjwotshbnhagelmzusx.supabase.co";
 const API_KEY      = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJmandvdHNoYm5oYWdlbG16dXN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxMjAyMjMsImV4cCI6MjA3OTY5NjIyM30.GNXNIwbYAO2ZZ16iVJIWC95Te3d_GwDCZw1qhpzko_M";
 const TABLE        = "live_overlay";
-const AGENT_PREFIX = "$77";              // auto-prepended to agent names
 const REST_BASE    = `${SUPABASE_URL}/rest/v1/${TABLE}`;
 // ============================================================
 
@@ -289,7 +288,7 @@ let lastPushedText = null;
 let inFlight = false;
 let queuedText = null;
 let isEnabled = false;
-let currentAgent = `${AGENT_PREFIX}i.exe`;
+let currentAgent = "i.exe";
 
 let cachedPos = { x: 100, y: 100 };
 let posLoaded = false;
@@ -376,19 +375,26 @@ async function setEnabled(on, skipPush = false) {
 }
 
 // ---------- Agent name normalization ----------
+// Ensures the name ends with .exe. No prefix is added.
+// Examples:
+//   "i"        -> "i.exe"
+//   "i.exe"    -> "i.exe"
+//   "test"     -> "test.exe"
+//   "test.exe" -> "test.exe"
 function normalizeAgentName(raw) {
   let v = (raw || '').trim();
   if (!v) return '';
   if (!/\.exe$/i.test(v)) v += '.exe';
-  if (!v.startsWith(AGENT_PREFIX)) v = AGENT_PREFIX + v;
   return v;
 }
 
 // ---------- Agent ----------
 async function setAgent(name) {
   if (!currentHwid) { status("No HWID", true); return; }
+
   const v = normalizeAgentName(name);
   if (!v) { status("Enter agent name", true); return; }
+
   const ok = await fastPatch({ agent: v });
   if (ok) {
     currentAgent = v;
@@ -418,25 +424,14 @@ async function resetPosition() {
   status(`Position reset → (${x}, ${y})`);
 }
 
-// ============================================================
-// VOICE — LIVE TRANSCRIPT
-// ============================================================
+// ---------- Voice ----------
 let recognition = null;
-let activeRec = null;
 let recognitionTarget = null;
-
-// Per-session state
-let committedBase = '';    // text that existed before session started
-let finalThisSession = ''; // phrases finalized during this session
-let interim = '';          // live in-progress words
+let activeRec = null;
 
 function setupVoice(targetId, statusId, btnId) {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SR) {
-    $(statusId).textContent = "❌ Speech not supported in this browser";
-    return null;
-  }
-
+  if (!SR) { $(statusId).textContent = "❌ Speech not supported in this browser"; return null; }
   const rec = new SR();
   rec.continuous = true;
   rec.interimResults = true;
@@ -447,37 +442,18 @@ function setupVoice(targetId, statusId, btnId) {
     $(btnId).classList.add('listening');
     $(statusId).textContent = "🎙️ Listening… speak now";
     $(statusId).classList.add('active');
-
-    // snapshot current value as the committed base for this session
-    committedBase = $(targetId).value || '';
-    if (committedBase && !committedBase.endsWith(' ')) committedBase += ' ';
-    finalThisSession = '';
-    interim = '';
   };
-
   rec.onresult = e => {
-    interim = '';
+    let finalText = '';
     for (let i = e.resultIndex; i < e.results.length; i++) {
-      const transcript = e.results[i][0].transcript;
-      if (e.results[i].isFinal) {
-        finalThisSession += transcript + ' ';
-      } else {
-        interim += transcript;
-      }
+      if (e.results[i].isFinal) finalText += e.results[i][0].transcript;
     }
-
-    // rebuild the full textarea value: base + final-this-session + interim
-    const live = (committedBase + finalThisSession + interim).replace(/\s+/g, ' ');
-    const t = $(targetId);
-    t.value = live;
-
-    // keep caret at the end so it feels like live typing
-    t.selectionStart = t.selectionEnd = t.value.length;
-
-    // trigger pushText → live overlay update on every interim word
-    t.dispatchEvent(new Event('input', { bubbles: true }));
+    if (finalText && recognitionTarget) {
+      const t = $(recognitionTarget);
+      t.value = (t.value + ' ' + finalText).trim();
+      t.dispatchEvent(new Event('input', { bubbles: true }));
+    }
   };
-
   rec.onerror = e => {
     if (e.error === 'no-speech') return;
     if (e.error === 'not-allowed' || e.error === 'service-not-allowed')
@@ -488,37 +464,20 @@ function setupVoice(targetId, statusId, btnId) {
       $(statusId).textContent = "❌ " + e.error;
     stopVoice(btnId, statusId);
   };
-
   rec.onend = () => {
-    if (activeRec === rec && recognition === rec) {
-      // commit interim into base before restarting to avoid flicker
-      committedBase = ($(targetId).value || '').replace(/\s+/g, ' ');
-      if (committedBase && !committedBase.endsWith(' ')) committedBase += ' ';
-      finalThisSession = '';
-      interim = '';
-      try { rec.start(); } catch {}
-    } else {
-      $(btnId).classList.remove('listening');
-      $(statusId).classList.remove('active');
-    }
+    if (activeRec === rec && recognition === rec) { try { rec.start(); } catch {} }
+    else { $(btnId).classList.remove('listening'); $(statusId).classList.remove('active'); }
   };
-
   return rec;
 }
-
 function startVoice(rec, targetId, statusId, btnId) {
   if (!rec) return;
-  recognition = rec;
-  activeRec = rec;
-  recognitionTarget = targetId;
+  recognition = rec; activeRec = rec; recognitionTarget = targetId;
   try { rec.start(); } catch {}
 }
-
 function stopVoice(btnId, statusId) {
   if (recognition) { try { recognition.stop(); } catch {} }
-  recognition = null;
-  recognitionTarget = null;
-  activeRec = null;
+  recognition = null; recognitionTarget = null; activeRec = null;
   if (btnId) $(btnId).classList.remove('listening');
   if (statusId) {
     $(statusId).textContent = "🎤 Click mic to dictate";
@@ -595,6 +554,7 @@ function bindUI() {
 
   $("agentBtn").onclick = () => setAgent($("agentInput").value);
 
+  // Live preview: show what will actually be saved
   $("agentInput").addEventListener('input', e => {
     const raw = e.target.value.trim();
     if (!raw) { e.target.dataset.preview = ''; return; }
