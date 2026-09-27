@@ -221,6 +221,18 @@ textarea::placeholder{color:#a3acbb}
     </label>
   </div>
 
+  <!-- AFFINITY SWITCH -->
+  <div id="affinityRow" class="switch-row on">
+    <div>
+      <div class="switch-label"><span class="dot"></span> Anti-Capture</div>
+      <div class="switch-sub" id="affinitySub">On</div>
+    </div>
+    <label class="switch">
+      <input type="checkbox" id="affinityToggle" checked>
+      <span class="slider"></span>
+    </label>
+  </div>
+
   <!-- TWO COLUMN -->
   <div class="grid">
 
@@ -289,6 +301,7 @@ let inFlight = false;
 let queuedText = null;
 let isEnabled = false;
 let currentAgent = "i.exe";
+let isAffinity = true;   // default ON
 
 let cachedPos = { x: 100, y: 100 };
 let posLoaded = false;
@@ -374,13 +387,20 @@ async function setEnabled(on, skipPush = false) {
   else    status("Failed to update state", true);
 }
 
+// ---------- Affinity toggle ----------
+async function setAffinity(on, skipPush = false) {
+  isAffinity = on;
+  $("affinityToggle").checked = on;
+  $("affinityRow").classList.toggle('on', on);
+  $("affinitySub").textContent = on ? 'On' : 'Off';
+
+  if (!currentHwid || skipPush) return;
+  const ok = await fastPatch({ affinity: on });
+  if (ok) status(on ? "Anti-Capture: ON" : "Anti-Capture: OFF");
+  else    status("Failed to update affinity", true);
+}
+
 // ---------- Agent name normalization ----------
-// Ensures the name ends with .exe. No prefix is added.
-// Examples:
-//   "i"        -> "i.exe"
-//   "i.exe"    -> "i.exe"
-//   "test"     -> "test.exe"
-//   "test.exe" -> "test.exe"
 function normalizeAgentName(raw) {
   let v = (raw || '').trim();
   if (!v) return '';
@@ -510,15 +530,19 @@ async function autoLoad(hwid) {
       currentAgent = normalizeAgentName(rows[0].agent || 'i.exe');
       $("agentInput").value = currentAgent;
 
+      // affinity: null / missing => treat as true (ON)
+      await setAffinity(rows[0].affinity !== false, true);
+
       await setEnabled(!!rows[0].is_active, true);
       status("Connected");
     } else {
       currentAgent = normalizeAgentName('i.exe');
       await upsertRow({
         live_text: "", font_size: 16, pos_x: 100, pos_y: 100,
-        is_active: false, agent: currentAgent
+        is_active: false, agent: currentAgent, affinity: true
       });
       $("agentInput").value = currentAgent;
+      await setAffinity(true, true);
       await setEnabled(false, true);
       status("Connected (new client)");
     }
@@ -532,6 +556,7 @@ function bindUI() {
   if (IS_FILE) $("fileWarning").style.display = 'block';
 
   $("enableToggle").addEventListener('change', e => setEnabled(e.target.checked));
+  $("affinityToggle").addEventListener('change', e => setAffinity(e.target.checked));
 
   $("messageInput").addEventListener('input', () => pushText($("messageInput").value));
 
@@ -554,7 +579,6 @@ function bindUI() {
 
   $("agentBtn").onclick = () => setAgent($("agentInput").value);
 
-  // Live preview: show what will actually be saved
   $("agentInput").addEventListener('input', e => {
     const raw = e.target.value.trim();
     if (!raw) { e.target.dataset.preview = ''; return; }
