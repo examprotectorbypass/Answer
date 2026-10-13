@@ -1,688 +1,941 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>QZK Control</title>
-<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-<style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{
-  background:
-    radial-gradient(circle at 0% 0%,#eef2ff 0,transparent 50%),
-    radial-gradient(circle at 100% 100%,#f5eeff 0,transparent 50%),
-    #f4f6fb;
-  min-height:100vh;
-  font-family:system-ui,-apple-system,'Segoe UI',sans-serif;
-  color:#1a1a2e;
-  padding:40px 16px;
-  display:flex;
-  justify-content:center;
-  align-items:flex-start;
-}
-.box{
-  width:100%;
-  max-width:680px;
-  background:#fff;
-  border-radius:24px;
-  padding:24px;
-  box-shadow:
-    0 0 0 1px rgba(20,20,50,.04),
-    0 1px 3px rgba(20,20,50,.04),
-    0 12px 28px rgba(20,20,50,.08),
-    0 32px 80px rgba(20,20,50,.06);
-}
-.title{font-size:15px;font-weight:800;margin-bottom:2px;letter-spacing:-.2px}
-.subtitle{font-size:11px;color:#8a93a4;font-weight:600;margin-bottom:16px}
-label{display:block;font-size:10px;font-weight:800;text-transform:uppercase;
-  letter-spacing:.08em;color:#8a93a4;margin-bottom:6px}
-
-.switch-row{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:12px 16px;background:#fafbfd;border:1.5px solid #e3e6ee;
-  border-radius:14px;margin-bottom:14px;
-  transition:background .25s,border-color .25s;
-}
-.switch-row.on{
-  background:linear-gradient(135deg,#eef2ff,#e6ecff);
-  border-color:#c8d2ff;
-}
-.switch-label{display:flex;align-items:center;gap:10px;
-  font-size:13px;font-weight:800;color:#1a1a2e}
-.switch-label .dot{width:10px;height:10px;border-radius:50%;
-  background:#c8d2dd;transition:background .25s,box-shadow .25s;flex-shrink:0}
-.switch-row.on .switch-label .dot{
-  background:#667eea;box-shadow:0 0 0 4px rgba(102,126,234,.2)}
-.switch-sub{font-size:10px;font-weight:600;color:#8a93a4;
-  margin-top:2px;margin-left:20px}
-.switch{position:relative;display:inline-block;width:54px;height:30px;flex-shrink:0}
-.switch input{opacity:0;width:0;height:0;position:absolute}
-.switch .slider{
-  position:absolute;inset:0;background:#c8d2dd;border-radius:999px;
-  cursor:pointer;transition:background .25s;
-  box-shadow:inset 0 1px 3px rgba(0,0,0,.08);
-}
-.switch .slider::before{
-  content:"";position:absolute;height:24px;width:24px;left:3px;top:3px;
-  background:#fff;border-radius:50%;
-  transition:transform .25s cubic-bezier(.4,0,.2,1);
-  box-shadow:0 2px 6px rgba(0,0,0,.2);
-}
-.switch input:checked + .slider{background:linear-gradient(135deg,#667eea,#764ba2)}
-.switch input:checked + .slider::before{transform:translateX(24px)}
-
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-@media(max-width:560px){.grid{grid-template-columns:1fr}}
-
-.card{
-  background:#fafbfd;border:1.5px solid #e3e6ee;border-radius:14px;
-  padding:14px;display:flex;flex-direction:column;
-}
-.card .label-top{
-  font-size:10px;font-weight:800;text-transform:uppercase;
-  letter-spacing:.08em;color:#8a93a4;margin-bottom:8px}
-
-.message-wrap{display:flex;gap:8px;align-items:stretch;flex:1}
-textarea{
-  flex:1;width:100%;font-size:13px;padding:10px 12px;
-  border:1.5px solid #e3e6ee;border-radius:12px;outline:none;
-  font-family:inherit;background:#fff;resize:none;min-height:120px;
-  transition:border-color .18s,box-shadow .18s;line-height:1.5}
-textarea:focus{border-color:#667eea;box-shadow:0 0 0 4px rgba(102,126,234,.12)}
-textarea::placeholder{color:#a3acbb}
-.btn-mic{
-  width:44px;border-radius:12px;border:none;
-  background:linear-gradient(135deg,#1a1a2e,#2a2a4e);color:#fff;
-  display:inline-flex;align-items:center;justify-content:center;
-  flex-shrink:0;padding:0;font-size:16px;cursor:pointer;
-  box-shadow:0 6px 16px rgba(26,26,46,.3);
-  transition:transform .12s,box-shadow .18s,background .2s}
-.btn-mic:hover{transform:scale(1.04)}
-.btn-mic:active{transform:scale(.94)}
-.btn-mic.listening{
-  background:linear-gradient(135deg,#ef476f,#d62839);
-  animation:pulse 1.2s infinite}
-@keyframes pulse{
-  0%{box-shadow:0 0 0 0 rgba(239,71,111,.55)}
-  70%{box-shadow:0 0 0 12px rgba(239,71,111,0)}
-  100%{box-shadow:0 0 0 0 rgba(239,71,111,0)}}
-.voice-status{font-size:11px;color:#8a93a4;min-height:14px;
-  margin-top:6px;font-weight:600;transition:color .2s}
-.voice-status.active{color:#ef476f;font-weight:700}
-
-.hwid-pill{
-  font-family:Consolas,monospace;font-size:10px;color:#5b6b7d;
-  word-break:break-all;background:#fff;border:1.5px solid #e3e6ee;
-  border-radius:12px;padding:9px 12px;line-height:1.4;
-  display:flex;align-items:center}
-
-.agent-row{display:flex;gap:8px;align-items:stretch}
-.agent-row input{
-  flex:1;min-width:0;font-size:13px;padding:9px 12px;
-  border:1.5px solid #e3e6ee;border-radius:12px;outline:none;
-  font-family:inherit;background:#fff;
-  transition:border-color .18s,box-shadow .18s}
-.agent-row input:focus{border-color:#667eea;box-shadow:0 0 0 4px rgba(102,126,234,.12)}
-.agent-row input::placeholder{color:#a3acbb}
-.btn-agent{
-  padding:0 16px;border:none;border-radius:12px;
-  background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;
-  font-size:12px;font-weight:800;cursor:pointer;letter-spacing:.02em;
-  flex-shrink:0;transition:transform .12s,box-shadow .18s,filter .15s;
-  box-shadow:0 4px 12px rgba(102,126,234,.35)}
-.btn-agent:hover{filter:brightness(1.08);box-shadow:0 6px 16px rgba(102,126,234,.45)}
-.btn-agent:active{transform:scale(.97)}
-
-.font-block{
-  background:#fff;border:1.5px solid #e3e6ee;border-radius:12px;
-  padding:10px 12px;margin-bottom:10px}
-.font-header{display:flex;justify-content:space-between;
-  align-items:center;margin-bottom:8px}
-.font-header .lbl{font-size:10px;font-weight:800;text-transform:uppercase;
-  letter-spacing:.08em;color:#8a93a4}
-.font-val{font-size:12px;font-weight:800;color:#667eea;background:#eef2ff;
-  padding:1px 9px;border-radius:999px;min-width:32px;text-align:center}
-.font-row{display:flex;gap:8px;align-items:center}
-.font-row button{
-  width:28px;height:28px;padding:0;border-radius:8px;border:none;
-  background:#fff;color:#1a1a2e;font-weight:800;font-size:14px;
-  cursor:pointer;border:1.5px solid #e3e6ee;transition:all .12s;flex-shrink:0}
-.font-row button:hover{background:#f4f6ff;border-color:#c8d2ff;color:#667eea}
-.font-row button:active{transform:scale(.92)}
-.font-row input[type=range]{
-  flex:1;-webkit-appearance:none;appearance:none;height:6px;
-  border-radius:6px;background:linear-gradient(90deg,#667eea,#764ba2);
-  outline:none;cursor:pointer}
-.font-row input[type=range]::-webkit-slider-thumb{
-  -webkit-appearance:none;width:18px;height:18px;border-radius:50%;
-  background:#fff;cursor:pointer;border:3px solid #667eea;
-  box-shadow:0 2px 8px rgba(102,126,234,.5)}
-.font-row input[type=range]::-moz-range-thumb{
-  width:18px;height:18px;border-radius:50%;background:#fff;
-  cursor:pointer;border:3px solid #667eea;
-  box-shadow:0 2px 8px rgba(102,126,234,.5)}
-
-.color-block{
-  background:#fff;border:1.5px solid #e3e6ee;border-radius:12px;
-  padding:10px 12px;margin-bottom:10px}
-.color-row{display:flex;gap:10px;align-items:center;margin-bottom:10px}
-.color-row:last-child{margin-bottom:0}
-.color-row .lbl{font-size:10px;font-weight:800;text-transform:uppercase;
-  letter-spacing:.08em;color:#8a93a4;min-width:48px}
-.color-row input[type=color]{
-  width:36px;height:28px;padding:0;border:1.5px solid #e3e6ee;
-  border-radius:8px;cursor:pointer;background:#fff;flex-shrink:0}
-.color-row .hex{
-  font-family:Consolas,monospace;font-size:11px;color:#5b6b7d;
-  background:#f4f6fb;border:1.5px solid #e3e6ee;border-radius:8px;
-  padding:4px 8px;flex:1;min-width:0;text-align:center;font-weight:700}
-.color-row input[type=range]{
-  flex:1;-webkit-appearance:none;appearance:none;height:6px;
-  border-radius:6px;background:linear-gradient(90deg,#c8d2dd,#667eea);
-  outline:none;cursor:pointer}
-.color-row input[type=range]::-webkit-slider-thumb{
-  -webkit-appearance:none;width:18px;height:18px;border-radius:50%;
-  background:#fff;cursor:pointer;border:3px solid #667eea;
-  box-shadow:0 2px 8px rgba(102,126,234,.5)}
-.color-row input[type=range]::-moz-range-thumb{
-  width:18px;height:18px;border-radius:50%;background:#fff;
-  cursor:pointer;border:3px solid #667eea;
-  box-shadow:0 2px 8px rgba(102,126,234,.5)}
-.color-val{font-size:12px;font-weight:800;color:#667eea;background:#eef2ff;
-  padding:1px 9px;border-radius:999px;min-width:44px;text-align:center}
-
-.btn-reset{
-  width:100%;padding:11px;border:none;border-radius:12px;
-  background:linear-gradient(135deg,#ffb703,#fb8500);color:#4a3000;
-  font-size:12px;font-weight:800;cursor:pointer;
-  display:flex;align-items:center;justify-content:center;gap:6px;
-  letter-spacing:.02em;transition:transform .12s,filter .15s;
-  box-shadow:0 4px 12px rgba(255,183,3,.3)}
-.btn-reset:hover{filter:brightness(1.06)}
-.btn-reset:active{transform:scale(.98)}
-
-.status{
-  margin-top:14px;padding:9px 14px;border-radius:12px;
-  font-size:12px;font-weight:700;text-align:center;
-  background:#e6f9f1;color:#0f8f5a;min-height:34px;
-  display:flex;align-items:center;justify-content:center;
-  opacity:0;transition:opacity .25s,background .2s,color .2s}
-.status.show{opacity:1}
-.status.err{background:#fdeaef;color:#c8264a}
-
-.tip{
-  background:linear-gradient(135deg,#fff7e0,#fff1c8);
-  border:1px solid #ffe1a8;color:#6b4a00;border-radius:12px;
-  padding:9px 12px;font-size:11px;font-weight:600;
-  margin-bottom:12px;line-height:1.5}
-.tip code{background:rgba(0,0,0,.06);padding:1px 5px;border-radius:4px;font-size:10px}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Sharkmind — Remote Session</title>
+    <script src="config.js"></script>
+    <script src="https://cdn.socket.io/4.8.3/socket.io.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; }
+        html, body { 
+            font-family: 'Inter', sans-serif; 
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            width: 100%;
+            overflow: hidden;
+        }
+        body {
+            height: 100vh;
+            height: 100dvh;
+            display: flex;
+            flex-direction: column;
+        }
+        .in-window-fullscreen {
+            position: fixed !important;
+            inset: 0 !important;
+            z-index: 99999 !important;
+            border-radius: 0 !important;
+            margin: 0 !important;
+        }
+        .side-panel { transition: width 0.2s ease, opacity 0.2s ease; }
+        .side-panel.closed { width: 0 !important; opacity: 0; pointer-events: none; }
+        
+        #mainView { height: 100%; display: flex; flex-direction: column; }
+        .main-container { flex: 1; display: flex; overflow: hidden; min-height: 0; }
+        .stream-area { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
+        
+        .stream-canvas-wrapper {
+            position: relative;
+            flex: 1;
+            background: black;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 0;
+        }
+        
+        .stream-canvas-wrapper img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: block;
+        }
+        
+        .side-panel {
+            width: 340px;
+            background: #0f172a;
+            border-left: 1px solid #1e293b;
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+            overflow: hidden;
+        }
+        
+        @media (max-width: 900px) {
+            .side-panel {
+                position: fixed !important;
+                right: 0; top: 0; bottom: 0;
+                width: 85% !important;
+                max-width: 340px;
+                z-index: 100;
+                box-shadow: -4px 0 20px rgba(0,0,0,0.5);
+            }
+            .side-panel.closed { width: 0 !important; }
+            .stream-canvas-wrapper { min-height: 60vh !important; }
+            .top-bar {
+                flex-wrap: wrap;
+                padding: 6px 10px !important;
+                height: auto !important;
+                min-height: 48px;
+            }
+            .top-bar > div:first-child { flex: 1; min-width: 0; }
+            .top-bar .target-info {
+                font-size: 10px !important;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+            .top-bar .btn-group { gap: 4px !important; }
+            .top-bar button {
+                font-size: 9px !important;
+                padding: 4px 8px !important;
+                white-space: nowrap;
+            }
+            .realtime-bar {
+                max-width: 98% !important;
+                padding: 6px 8px !important;
+                border-radius: 14px !important;
+                gap: 4px !important;
+            }
+            .realtime-bar input {
+                width: 100% !important;
+                font-size: 11px !important;
+                padding: 8px 10px !important;
+            }
+            .realtime-bar button {
+                font-size: 9px !important;
+                padding: 4px 6px !important;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .top-bar { padding: 4px 8px !important; }
+            .top-bar button { font-size: 8px !important; padding: 3px 6px !important; }
+            .realtime-bar { flex-wrap: wrap; justify-content: center; }
+            .realtime-bar input { min-width: 100px; }
+        }
+        
+        .side-panel-content::-webkit-scrollbar { width: 4px; }
+        .side-panel-content::-webkit-scrollbar-track { background: #1e293b; }
+        .side-panel-content::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+        
+        .mic-btn-active {
+            background: #ef4444 !important;
+            animation: pulse-mic 1.2s infinite;
+        }
+        @keyframes pulse-mic {
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.5); }
+            70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+    </style>
 </head>
-<body>
+<body class="bg-slate-950 text-slate-100 antialiased">
 
-<div class="box">
-
-  <div class="title">Overlay Control</div>
-  <div class="subtitle">Live typing · instant push</div>
-
-  <div id="fileWarning" class="tip" style="display:none">
-    ⚠️ Mic needs <code>http://localhost</code> or HTTPS.
-  </div>
-
-  <!-- ENABLE SWITCH -->
-  <div id="enableRow" class="switch-row">
-    <div>
-      <div class="switch-label"><span class="dot"></span> Enable</div>
-      <div class="switch-sub" id="enableSub">Off</div>
-    </div>
-    <label class="switch">
-      <input type="checkbox" id="enableToggle">
-      <span class="slider"></span>
-    </label>
-  </div>
-
-  <!-- AFFINITY SWITCH -->
-  <div id="affinityRow" class="switch-row on">
-    <div>
-      <div class="switch-label"><span class="dot"></span> Anti-Capture</div>
-      <div class="switch-sub" id="affinitySub">On</div>
-    </div>
-    <label class="switch">
-      <input type="checkbox" id="affinityToggle" checked>
-      <span class="slider"></span>
-    </label>
-  </div>
-
-  <!-- TWO COLUMN -->
-  <div class="grid">
-
-    <!-- LEFT -->
-    <div class="card">
-      <div class="label-top">Message</div>
-      <div class="message-wrap">
-        <textarea id="messageInput" placeholder="Start typing — the overlay updates live…"></textarea>
-        <button id="adminVoiceBtn" class="btn-mic" title="Voice typing"><i class="bi bi-mic-fill"></i></button>
-      </div>
-      <div id="adminVoiceStatus" class="voice-status">🎤 Click mic to dictate</div>
+    <div id="statusBanner" class="fixed inset-0 z-50 bg-slate-950 flex items-center justify-center p-8">
+        <div class="max-w-lg w-full text-center">
+            <div class="text-4xl mb-5 opacity-60">🦈</div>
+            <h1 id="statusTitle" class="text-lg font-bold text-slate-200 mb-2">Connecting…</h1>
+            <p  id="statusMessage" class="text-sm text-slate-500 mb-5">Establishing session with the remote agent.</p>
+            <div id="statusHwid" class="text-[11px] font-mono text-slate-500 break-all bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 mb-5 hidden"></div>
+            <div id="statusRetry" class="hidden">
+                <button onclick="location.reload()"
+                        class="text-xs font-semibold text-blue-400 hover:text-blue-300 bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-lg transition">
+                    ↻ Retry
+                </button>
+            </div>
+        </div>
     </div>
 
-    <!-- RIGHT -->
-    <div class="card">
-      <div class="label-top">Hardware ID</div>
-      <div class="hwid-pill" id="hwidDisplay" style="margin-bottom:12px">—</div>
-
-      <div class="label-top">Agent</div>
-      <div class="agent-row" style="margin-bottom:12px">
-        <input type="text" id="agentInput" placeholder="i.exe">
-        <button id="agentBtn" class="btn-agent">Set</button>
-      </div>
-
-      <div class="font-block">
-        <div class="font-header">
-          <span class="lbl">Font Size</span>
-          <span id="fontSizeDisplay" class="font-val">16</span>
+    <div id="mainView" class="hidden">
+        <div class="top-bar h-12 bg-slate-900 border-b border-slate-800 flex items-center justify-between px-5 flex-shrink-0">
+            <div class="flex items-center space-x-2 sm:space-x-3 min-w-0">
+                <div class="text-[10px] sm:text-xs text-slate-400 target-info truncate">
+                    <span id="targetName" class="font-bold text-white">—</span>
+                    <span id="targetResolution" class="text-slate-500 ml-1 sm:ml-2"></span>
+                </div>
+                <button onclick="copyShareLink(this)"
+                        class="text-[9px] sm:text-[10px] font-semibold text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 px-1.5 sm:px-2 py-1 rounded transition flex-shrink-0">
+                    🔗 <span class="hidden sm:inline">Copy</span>
+                </button>
+            </div>
+            <div class="flex items-center space-x-1 sm:space-x-3 btn-group flex-shrink-0">
+                <div class="flex items-center space-x-1 sm:space-x-2">
+                    <span id="liveDot" class="w-1.5 h-1.5 rounded-full bg-slate-600"></span>
+                    <span id="liveLabel" class="text-[9px] sm:text-[11px] font-medium text-slate-500">Idle</span>
+                </div>
+                <button id="captureBtn" onclick="toggleCapture()"
+                        class="text-[9px] sm:text-[11px] font-semibold bg-emerald-600 hover:bg-emerald-500 text-white px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg transition">
+                    ▶ <span class="hidden sm:inline">Start</span>
+                </button>
+                <button onclick="toggleSidePanel()"
+                        class="text-[9px] sm:text-[11px] font-semibold text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg transition">
+                    ⚙ <span class="hidden sm:inline">Controls</span>
+                </button>
+            </div>
         </div>
-        <div class="font-row">
-          <button id="fontDecrease">−</button>
-          <input type="range" id="fontSizeSlider" min="10" max="72" value="16">
-          <button id="fontIncrease">+</button>
-        </div>
-      </div>
 
-      <div class="color-block">
-        <div class="color-row">
-          <span class="lbl">Color</span>
-          <input type="color" id="colorPicker" value="#efefef">
-          <span class="hex" id="colorHex">#EFEFEF</span>
-        </div>
-        <div class="color-row">
-          <span class="lbl">Opacity</span>
-          <input type="range" id="opacitySlider" min="0" max="100" value="100">
-          <span class="color-val" id="opacityDisplay">100%</span>
-        </div>
-      </div>
+        <div class="main-container">
+            <div class="stream-area">
+                <div id="streamCanvasWrapper"
+                     class="stream-canvas-wrapper relative bg-black overflow-hidden flex items-center justify-center cursor-crosshair select-none">
+                    <img id="liveStreamImg"
+                         class="w-full h-full object-contain pointer-events-auto"
+                         src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxIiBoZWlnaHQ9IjEiPjwvc3ZnPg=="/>
+                    <div id="clickMarker" class="absolute w-4 h-4 pointer-events-none transition-all duration-75 flex items-start justify-start hidden z-20">
+                        <span class="absolute -top-1.5 -left-1.5 w-6 h-6 rounded-full bg-blue-500/30 animate-ping"></span>
+                        <span class="w-3 h-3 rounded-full bg-[#0066FF] border-2 border-white shadow-md"></span>
+                    </div>
+                    <div id="ghostOverlayText"
+                         class="absolute pointer-events-none select-none whitespace-pre leading-none hidden z-10 font-sans font-normal m-0 p-0"></div>
+                    <div id="streamPlaceholder"
+                         class="absolute inset-0 flex items-center justify-center text-slate-500 text-xs bg-slate-950/70 pointer-events-none z-10 text-center px-4">
+                        Click "Start capture" to begin streaming
+                    </div>
+                    <div class="absolute bottom-3 sm:bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-1 sm:gap-2 bg-slate-900/90 backdrop-blur-sm border border-slate-700 rounded-2xl px-2 sm:px-3 py-1.5 sm:py-2 z-30 shadow-2xl max-w-[98%] sm:max-w-[90%] realtime-bar">
+                        <input type="text" id="realtimeInput" placeholder="Type or speak…"
+                               class="w-40 sm:w-64 md:w-80 bg-slate-800 border border-slate-700 rounded-xl px-2 sm:px-3 py-1.5 sm:py-2 text-[11px] sm:text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                        <button onclick="toggleVoiceInput()" id="voiceBtn"
+                                class="text-[11px] sm:text-[13px] text-slate-300 hover:text-white px-1.5 sm:px-2 py-1 rounded-lg transition bg-slate-800 hover:bg-slate-700 flex-shrink-0"
+                                title="Voice to text">
+                            🎤
+                        </button>
+                        <button onclick="clearRealtime()" class="text-[10px] sm:text-[11px] text-rose-400 hover:text-rose-300 px-1 sm:px-2 flex-shrink-0">Clear</button>
+                        <div class="w-px h-5 sm:h-6 bg-slate-700 hidden sm:block"></div>
+                        <button onclick="toggleInWindowFullscreen()"
+                                class="text-[10px] sm:text-[11px] font-semibold text-slate-300 hover:text-white px-1 sm:px-2 flex-shrink-0">
+                            <span id="fullscreenBtnText">⛶</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
 
-      <button id="resetPosBtn" class="btn-reset">
-        <i class="bi bi-arrow-counterclockwise"></i> Reset Position
-      </button>
+            <aside id="sidePanel" class="side-panel">
+                <div class="h-10 border-b border-slate-800 flex items-center justify-between px-4 flex-shrink-0">
+                    <span class="text-[11px] font-bold text-slate-300 uppercase tracking-wider">Controls</span>
+                    <button onclick="toggleSidePanel()" class="text-slate-500 hover:text-white text-sm">✕</button>
+                </div>
+                <div class="flex-1 overflow-y-auto p-4 space-y-5 text-slate-200 side-panel-content">
+                    <div class="space-y-3">
+                        <h3 class="text-[11px] font-bold uppercase tracking-wider text-slate-500">🖥 Display & Position</h3>
+                        <div>
+                            <label class="block text-[10px] font-semibold text-slate-400 mb-1">Display</label>
+                            <select id="screenSelect" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white">
+                                <option value="0">Display 1</option>
+                            </select>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <span class="text-[10px] text-slate-500">X (px)</span>
+                                <input type="number" id="posX" value="960"
+                                       class="w-full bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white"/>
+                            </div>
+                            <div>
+                                <span class="text-[10px] text-slate-500">Y (px)</span>
+                                <input type="number" id="posY" value="432"
+                                       class="w-full bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white"/>
+                            </div>
+                        </div>
+                        <p class="text-[10px] text-slate-500 leading-relaxed">
+                            Click anywhere on the stream to place the marker.
+                        </p>
+                    </div>
+
+                    <div class="space-y-3 pt-3 border-t border-slate-800">
+                        <h3 class="text-[11px] font-bold uppercase tracking-wider text-slate-500">🖊 Style</h3>
+                        <div>
+                            <label class="block text-[10px] font-semibold text-slate-400 mb-1">Font size (px)</label>
+                            <input type="number" id="fontSize" value="18"
+                                   class="w-full bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white"/>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-semibold text-slate-400 mb-1">Color</label>
+                            <div class="flex items-center space-x-2">
+                                <input type="color" id="fontColor" value="#EFEFEF"
+                                       class="w-8 h-8 rounded-lg border border-slate-700 p-0.5 cursor-pointer bg-slate-800"/>
+                                <span id="colorHexText" class="text-[11px] font-mono text-slate-400">#EFEFEF</span>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="text-[10px] font-semibold text-slate-400">
+                                Opacity: <span id="opacityDisplay" class="font-bold text-white">100%</span>
+                            </label>
+                            <input type="range" id="fontOpacity" min="5" max="100" value="100"
+                                   class="w-full mt-1 h-1 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-[#0066FF]"/>
+                        </div>
+                    </div>
+
+                    <div class="space-y-3 pt-3 border-t border-slate-800">
+                        <h3 class="text-[11px] font-bold uppercase tracking-wider text-slate-500">✍ Manual message</h3>
+                        <textarea id="draftText" rows="3" placeholder="Compose a message…"
+                                  class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"></textarea>
+                        <div class="flex space-x-2">
+                            <button onclick="sendDraft('update')"
+                                    class="flex-1 bg-[#0066FF] hover:bg-blue-700 text-white text-[11px] font-semibold py-1.5 rounded-lg transition">
+                                Send
+                            </button>
+                            <button onclick="sendDraft('clear')"
+                                    class="px-2.5 bg-rose-900/40 hover:bg-rose-900/60 text-rose-300 border border-rose-800 text-[11px] font-semibold py-1.5 rounded-lg transition">
+                                Clear
+                            </button>
+                        </div>
+                        <button onclick="clearDraft()" class="w-full text-[11px] text-slate-500 hover:text-slate-300 py-1">Reset draft</button>
+                    </div>
+                </div>
+            </aside>
+        </div>
     </div>
 
-  </div>
+    <script>
+        // ═══════════════════════════════════════════════
+        // URL params
+        // ═══════════════════════════════════════════════
+        const params    = new URLSearchParams(location.search);
+        const HWID      = params.get('hwid');
+        const URL_TOKEN = params.get('t');
 
-  <div id="status" class="status"></div>
-</div>
+        if (URL_TOKEN) {
+            try { sessionStorage.setItem('sharkmind_token', URL_TOKEN); } catch (_) {}
+        }
 
-<script>
-// ============================================================
-// CONFIG
-// ============================================================
-const SUPABASE_URL = "https://msythmwgprhliosejktv.supabase.co";
-const API_KEY      = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1zeXRobXdncHJobGlvc2Vqa3R2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAwNTkyMjQsImV4cCI6MjEwNTYzNTIyNH0.1FeYOZQbQkwEs21aiPmN9bEHAuflBMbKtcNz6xMxh7k";
-const TABLE        = "live_overlay";
-const REST_BASE    = `${SUPABASE_URL}/rest/v1/${TABLE}`;
-// ============================================================
+        const TOKEN = sessionStorage.getItem('sharkmind_token') || URL_TOKEN || '';
 
-const $ = id => document.getElementById(id);
-const params = new URLSearchParams(location.search);
-const IS_FILE = location.protocol === 'file:';
+        const statusBanner   = document.getElementById('statusBanner');
+        const mainView       = document.getElementById('mainView');
+        const statusTitleEl  = document.getElementById('statusTitle');
+        const statusMsgEl    = document.getElementById('statusMessage');
+        const statusHwidEl   = document.getElementById('statusHwid');
+        const statusRetryEl  = document.getElementById('statusRetry');
 
-let currentHwid = null;
-let lastPushedText = null;
-let inFlight = false;
-let queuedText = null;
-let isEnabled = false;
-let currentAgent = "i.exe";
-let isAffinity = true;
+        function showStatus(title, message, showRetry) {
+            statusTitleEl.textContent = title;
+            statusMsgEl.textContent   = message;
+            statusBanner.classList.remove('hidden');
+            mainView.classList.add('hidden');
+            mainView.classList.remove('flex');
+            if (showRetry) statusRetryEl.classList.remove('hidden');
+            else           statusRetryEl.classList.add('hidden');
+        }
 
-let cachedPos = { x: 100, y: 100 };
-let posLoaded = false;
-let posCacheTime = 0;
+        if (!HWID) {
+            showStatus('Invalid link', 'This link is missing its device identifier.', false);
+            statusHwidEl.classList.add('hidden');
+        } else {
+            statusHwidEl.textContent = HWID;
+            statusHwidEl.classList.remove('hidden');
+            showStatus('Connecting…', 'Establishing session with the remote agent.', false);
+        }
 
-// ---------- HTTP ----------
-async function fastPatch(fields) {
-  if (!currentHwid) return false;
-  try {
-    const res = await fetch(`${REST_BASE}?user_id=eq.${encodeURIComponent(currentHwid)}`, {
-      method: 'PATCH',
-      headers: {
-        'apikey': API_KEY,
-        'Authorization': `Bearer ${API_KEY}`,
-        'Content-Type': 'application/json',
-        'Prefer': 'return=minimal'
-      },
-      body: JSON.stringify(fields),
-      keepalive: true
-    });
-    return res.ok;
-  } catch { return false; }
-}
+        // ═══════════════════════════════════════════════
+        // Mobile detection
+        // ═══════════════════════════════════════════════
+        const isMobile = /Android|iPhone|iPad|iPod|Mobile|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+        const isAndroid = /Android/i.test(navigator.userAgent);
+        console.log('[voice] Mobile:', isMobile, 'iOS:', isIOS, 'Android:', isAndroid);
 
-async function upsertRow(fields) {
-  if (!currentHwid) return false;
-  try {
-    const res = await fetch(REST_BASE, {
-      method: 'POST',
-      headers: {
-        'apikey': API_KEY,
-        'Authorization': `Bearer ${API_KEY}`,
-        'Content-Type': 'application/json',
-        'Prefer': 'resolution=merge-duplicates,return=minimal'
-      },
-      body: JSON.stringify({ user_id: currentHwid, ...fields })
-    });
-    return res.ok;
-  } catch { return false; }
-}
+        // ═══════════════════════════════════════════════
+        // Socket
+        // ═══════════════════════════════════════════════
+        const SOCKET_URL  = window.SHARKMIND?.SOCKET_URL || 'http://localhost:3000';
+        const SOCKET_PATH = window.SHARKMIND?.SOCKET_PATH || '/socket.io';
 
-// ---------- Text push ----------
-function pushText(text) {
-  if (!isEnabled) return;
-  queuedText = text;
-  flushQueue();
-}
-async function flushQueue() {
-  if (inFlight || queuedText === null) return;
-  inFlight = true;
-  const t = queuedText;
-  queuedText = null;
-  lastPushedText = t;
-  await fastPatch({ live_text: t });
-  inFlight = false;
-  if (queuedText !== null) flushQueue();
-}
+        const socket = io(SOCKET_URL, {
+            path: SOCKET_PATH,
+            transports: ['websocket'],
+            auth: TOKEN ? { token: TOKEN } : {},
+            reconnection: true,
+            reconnectionDelay: 500,
+            reconnectionDelayMax: 3000,
+            reconnectionAttempts: Infinity,
+            timeout: 10000
+        });
 
-// ---------- Status ----------
-function status(msg, isErr = false) {
-  const el = $("status");
-  el.textContent = msg;
-  el.className = 'status show' + (isErr ? ' err' : '');
-  clearTimeout(el._t);
-  el._t = setTimeout(() => el.classList.remove('show'), 1800);
-}
+        // ═══════════════════════════════════════════════
+        // State
+        // ═══════════════════════════════════════════════
+        let target = null;
+        let previousBlobUrl = null;
+        let currentScreenWidth = 1920;
+        let currentScreenHeight = 1080;
+        let cachedScreens = [];
+        let activeGhostText = '';
+        let sidePanelOpen = true;
+        let captureEnabled = false;
+        let userPaused = false;
+        let resolved = false;
+        let joined = false;
 
-// ---------- Enable toggle ----------
-async function setEnabled(on, skipPush = false) {
-  isEnabled = on;
-  $("enableToggle").checked = on;
-  $("enableRow").classList.toggle('on', on);
-  $("enableSub").textContent = on ? 'On' : 'Off';
+        const streamWrapper    = document.getElementById('streamCanvasWrapper');
+        const streamImg        = document.getElementById('liveStreamImg');
+        const clickMarker      = document.getElementById('clickMarker');
+        const ghostOverlay     = document.getElementById('ghostOverlayText');
+        const posXInput        = document.getElementById('posX');
+        const posYInput        = document.getElementById('posY');
+        const fontSizeInput    = document.getElementById('fontSize');
+        const fontColorInput   = document.getElementById('fontColor');
+        const fontOpacityInput = document.getElementById('fontOpacity');
+        const rtInput          = document.getElementById('realtimeInput');
 
-  if (!currentHwid) return;
-  if (skipPush) return;
+        // ═══════════════════════════════════════════════
+        // Socket connect / auth
+        // ═══════════════════════════════════════════════
+        function joinAsOperator() {
+            socket.emit('join_operator', TOKEN ? { token: TOKEN } : { public: true });
+        }
 
-  const ok = await fastPatch({
-    is_active: on,
-    live_text: on ? ($("messageInput").value || "") : ""
-  });
-  if (ok) status(on ? "Enable: ON" : "Enable: OFF");
-  else    status("Failed to update state", true);
-}
+        socket.on('connect', () => {
+            joined = false;
+            joinAsOperator();
+            if (target && !userPaused) {
+                socket.emit('set_capture', { targetUsername: target, enabled: true });
+                if (activeGhostText) sendPayload('update', activeGhostText);
+            }
+        });
 
-// ---------- Affinity toggle ----------
-async function setAffinity(on, skipPush = false) {
-  isAffinity = on;
-  $("affinityToggle").checked = on;
-  $("affinityRow").classList.toggle('on', on);
-  $("affinitySub").textContent = on ? 'On' : 'Off';
+        socket.on('auth_ok', () => { joined = true; });
+        socket.on('auth_error', () => { joined = false; socket.emit('join_operator', { public: true }); });
+        socket.on('connect_error', (e) => console.error('[agent] connect_error:', e.message));
+        socket.on('disconnect', () => {
+            joined = false;
+            if (!resolved) showStatus('Connection lost', 'The link to the agent was interrupted.', true);
+        });
 
-  if (!currentHwid || skipPush) return;
-  const ok = await fastPatch({ affinity: on });
-  if (ok) status(on ? "Anti-Capture: ON" : "Anti-Capture: OFF");
-  else    status("Failed to update affinity", true);
-}
+        // ═══════════════════════════════════════════════
+        // Button states
+        // ═══════════════════════════════════════════════
+        function setCaptureButtonIdle() {
+            const b = document.getElementById('captureBtn');
+            b.innerHTML = '▶ <span class="hidden sm:inline">Start capture</span><span class="sm:hidden">Start</span>';
+            b.className = 'text-[9px] sm:text-[11px] font-semibold bg-emerald-600 hover:bg-emerald-500 text-white px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg transition';
+            const dot = document.getElementById('liveDot');
+            const lbl = document.getElementById('liveLabel');
+            dot.className = 'w-1.5 h-1.5 rounded-full bg-slate-600';
+            lbl.textContent = 'Idle';
+            lbl.className = 'text-[9px] sm:text-[11px] font-medium text-slate-500';
+        }
+        function setCaptureButtonActive() {
+            const b = document.getElementById('captureBtn');
+            b.innerHTML = '⏸ <span class="hidden sm:inline">Pause capture</span><span class="sm:hidden">Pause</span>';
+            b.className = 'text-[9px] sm:text-[11px] font-semibold bg-rose-600 hover:bg-rose-500 text-white px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg transition';
+            const dot = document.getElementById('liveDot');
+            const lbl = document.getElementById('liveLabel');
+            dot.className = 'w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse';
+            lbl.textContent = 'Live';
+            lbl.className = 'text-[9px] sm:text-[11px] font-medium text-emerald-400';
+        }
+        function setCaptureButtonWaiting() {
+            const dot = document.getElementById('liveDot');
+            const lbl = document.getElementById('liveLabel');
+            dot.className = 'w-1.5 h-1.5 rounded-full bg-amber-500';
+            lbl.textContent = 'Waiting…';
+            lbl.className = 'text-[9px] sm:text-[11px] font-medium text-amber-400';
+        }
 
-// ---------- Agent name normalization ----------
-function normalizeAgentName(raw) {
-  let v = (raw || '').trim();
-  if (!v) return '';
-  if (!/\.exe$/i.test(v)) v += '.exe';
-  return v;
-}
+        // ═══════════════════════════════════════════════
+        // Input listeners
+        // ═══════════════════════════════════════════════
+        fontColorInput.addEventListener('input', (e) => {
+            document.getElementById('colorHexText').textContent = e.target.value.toUpperCase();
+            updateGhostOverlay();
+        });
+        fontOpacityInput.addEventListener('input', (e) => {
+            document.getElementById('opacityDisplay').textContent = `${e.target.value}%`;
+            updateGhostOverlay();
+        });
+        fontSizeInput.addEventListener('input', updateGhostOverlay);
+        posXInput.addEventListener('input', () => { updateMarkerAndGhostFromInputs(); if (activeGhostText) sendPayload('update', activeGhostText); });
+        posYInput.addEventListener('input', () => { updateMarkerAndGhostFromInputs(); if (activeGhostText) sendPayload('update', activeGhostText); });
 
-async function setAgent(name) {
-  if (!currentHwid) { status("No HWID", true); return; }
-  const v = normalizeAgentName(name);
-  if (!v) { status("Enter agent name", true); return; }
-  const ok = await fastPatch({ agent: v });
-  if (ok) {
-    currentAgent = v;
-    $("agentInput").value = v;
-    status(`Agent set to ${v}`);
-  } else {
-    status("Failed to set agent", true);
-  }
-}
+        function toggleSidePanel() {
+            sidePanelOpen = !sidePanelOpen;
+            document.getElementById('sidePanel').classList.toggle('closed', !sidePanelOpen);
+            setTimeout(updateMarkerAndGhostFromInputs, 220);
+        }
 
-// ---------- Live style push (debounced) ----------
-let _styleTimer = null;
-let _pendingStyle = {};
+        // ═══════════════════════════════════════════════
+        // Agent list
+        // ═══════════════════════════════════════════════
+        socket.on('agents_updated', (agents) => {
+            if (!HWID) return;
+            const list = Array.isArray(agents) ? agents : [];
+            const match = list.find(a => a.username === HWID) || list.find(a => a.username.startsWith(HWID));
 
-function queueStylePush(fields) {
-  Object.assign(_pendingStyle, fields);
-  if (_styleTimer) clearTimeout(_styleTimer);
-  _styleTimer = setTimeout(async () => {
-    const payload = _pendingStyle;
-    _pendingStyle = {};
-    _styleTimer = null;
-    if (!currentHwid) return;
-    const ok = await fastPatch(payload);
-    if (ok) {
-      const parts = [];
-      if ('font_size'  in payload) parts.push(`${payload.font_size}px`);
-      if ('text_color' in payload) parts.push(payload.text_color);
-      if ('opacity'    in payload) parts.push(`${payload.opacity}%`);
-      if (parts.length) status("Updated " + parts.join(" · "));
-    } else {
-      status("Failed to update style", true);
-    }
-  }, 120);
-}
+            if (!match) {
+                if (!resolved) {
+                    showStatus('Device not found', 'No agent has ever connected with this identifier.', true);
+                    statusHwidEl.classList.remove('hidden');
+                }
+                return;
+            }
 
-// ---------- Reset position ----------
-async function resetPosition() {
-  if (!currentHwid) return;
-  const x = Math.max(Math.floor(window.innerWidth  / 2 - 200), 0);
-  const y = Math.max(Math.floor(window.innerHeight / 2 - 100), 0);
-  cachedPos = { x, y };
-  posCacheTime = Date.now();
-  posLoaded = true;
-  await fastPatch({ pos_x: x, pos_y: y });
-  status(`Position reset → (${x}, ${y})`);
-}
+            if (!match.online) {
+                if (!resolved) {
+                    showStatus('Device is offline', 'The agent exists but is not currently connected.', true);
+                    statusHwidEl.textContent = match.username;
+                    statusHwidEl.classList.remove('hidden');
+                } else {
+                    setCaptureButtonWaiting();
+                    document.getElementById('streamPlaceholder').textContent = 'Agent offline — waiting for it to reconnect…';
+                    document.getElementById('streamPlaceholder').classList.remove('hidden');
+                }
+                return;
+            }
 
-// ---------- Voice ----------
-let recognition = null;
-let recognitionTarget = null;
-let activeRec = null;
+            const firstTime = !resolved;
+            resolved = true;
+            if (firstTime) {
+                statusBanner.classList.add('hidden');
+                mainView.classList.remove('hidden');
+                mainView.classList.add('flex');
+            }
 
-function setupVoice(targetId, statusId, btnId) {
-  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SR) { $(statusId).textContent = "❌ Speech not supported in this browser"; return null; }
-  const rec = new SR();
-  rec.continuous = true;
-  rec.interimResults = true;
-  rec.lang = 'en-US';
-  rec.maxAlternatives = 1;
+            if (target !== match.username) {
+                target = match.username;
+                captureEnabled = false;
+                userPaused = false;
+                setCaptureButtonIdle();
+                document.getElementById('targetName').textContent = match.systemName || match.username;
+                if (match.display && match.display.width && match.display.height) {
+                    currentScreenWidth  = match.display.width;
+                    currentScreenHeight = match.display.height;
+                    const sf = match.display.scaleFactor || 1;
+                    const physW = Math.round(match.display.width  * sf);
+                    const physH = Math.round(match.display.height * sf);
+                    document.getElementById('targetResolution').textContent =
+                        sf === 1 ? `(${match.display.width}×${match.display.height})`
+                                 : `(${match.display.width}×${match.display.height} @ ${Math.round(sf*100)}% → ${physW}×${physH})`;
+                }
+                document.getElementById('streamPlaceholder').textContent = 'Click "Start capture" to begin streaming';
+                document.getElementById('streamPlaceholder').classList.remove('hidden');
+                setTimeout(updateMarkerAndGhostFromInputs, 100);
+            } else if (captureEnabled && !userPaused) {
+                socket.emit('set_capture', { targetUsername: target, enabled: true });
+                setCaptureButtonActive();
+            }
+        });
 
-  rec.onstart = () => {
-    $(btnId).classList.add('listening');
-    $(statusId).textContent = "🎙️ Listening… speak now";
-    $(statusId).classList.add('active');
-  };
-  rec.onresult = e => {
-    let finalText = '';
-    for (let i = e.resultIndex; i < e.results.length; i++) {
-      if (e.results[i].isFinal) finalText += e.results[i][0].transcript;
-    }
-    if (finalText && recognitionTarget) {
-      const t = $(recognitionTarget);
-      t.value = (t.value + ' ' + finalText).trim();
-      t.dispatchEvent(new Event('input', { bubbles: true }));
-    }
-  };
-  rec.onerror = e => {
-    if (e.error === 'no-speech') return;
-    if (e.error === 'not-allowed' || e.error === 'service-not-allowed')
-      $(statusId).textContent = "❌ Mic blocked — needs http:// or https://";
-    else if (e.error === 'network')
-      $(statusId).textContent = "❌ Network error";
-    else
-      $(statusId).textContent = "❌ " + e.error;
-    stopVoice(btnId, statusId);
-  };
-  rec.onend = () => {
-    if (activeRec === rec && recognition === rec) { try { rec.start(); } catch {} }
-    else { $(btnId).classList.remove('listening'); $(statusId).classList.remove('active'); }
-  };
-  return rec;
-}
-function startVoice(rec, targetId, statusId, btnId) {
-  if (!rec) return;
-  recognition = rec; activeRec = rec; recognitionTarget = targetId;
-  try { rec.start(); } catch {}
-}
-function stopVoice(btnId, statusId) {
-  if (recognition) { try { recognition.stop(); } catch {} }
-  recognition = null; recognitionTarget = null; activeRec = null;
-  if (btnId) $(btnId).classList.remove('listening');
-  if (statusId) {
-    $(statusId).textContent = "🎤 Click mic to dictate";
-    $(statusId).classList.remove('active');
-  }
-}
+        // ═══════════════════════════════════════════════
+        // Capture toggle
+        // ═══════════════════════════════════════════════
+        function toggleCapture() {
+            if (!target) return;
+            if (!joined) { joinAsOperator(); setTimeout(doToggleCapture, 300); return; }
+            doToggleCapture();
+        }
 
-// ---------- Auto-load HWID ----------
-async function autoLoad(hwid) {
-  if (!hwid) return;
-  currentHwid = hwid;
-  localStorage.setItem("hwid", hwid);
-  $("hwidDisplay").textContent = hwid;
+        function doToggleCapture() {
+            captureEnabled = !captureEnabled;
+            userPaused = !captureEnabled;
+            if (captureEnabled) {
+                setCaptureButtonActive();
+                socket.emit('set_capture', { targetUsername: target, enabled: true });
+            } else {
+                setCaptureButtonIdle();
+                socket.emit('set_capture', { targetUsername: target, enabled: false });
+                clearLive();
+            }
+        }
 
-  try {
-    const res = await fetch(
-      `${REST_BASE}?user_id=eq.${encodeURIComponent(hwid)}&select=*`,
-      { headers: { apikey: API_KEY, Authorization: `Bearer ${API_KEY}` } });
-    const rows = await res.json();
+        // ═══════════════════════════════════════════════
+        // Live frames
+        // ═══════════════════════════════════════════════
+        socket.on('screen_stream', (data) => {
+            if (!target || data.username !== target) return;
+            if (!captureEnabled) return;
 
-    if (rows[0]) {
-      $("messageInput").value = rows[0].live_text || "";
-      $("fontSizeSlider").value = rows[0].font_size ?? 16;
-      $("fontSizeDisplay").textContent = rows[0].font_size ?? 16;
-      lastPushedText = rows[0].live_text || "";
-      cachedPos = { x: rows[0].pos_x ?? 100, y: rows[0].pos_y ?? 100 };
-      posLoaded = true;
-      posCacheTime = Date.now();
+            document.getElementById('streamPlaceholder').classList.add('hidden');
 
-      currentAgent = normalizeAgentName(rows[0].agent || 'i.exe');
-      $("agentInput").value = currentAgent;
+            if (data.meta) {
+                try {
+                    const metaObj = typeof data.meta === 'string' ? JSON.parse(data.meta) : data.meta;
+                    if (metaObj.screenWidth)  currentScreenWidth  = metaObj.screenWidth;
+                    if (metaObj.screenHeight) currentScreenHeight = metaObj.screenHeight;
+                    if (metaObj.screens && Array.isArray(metaObj.screens)) {
+                        const newJson = JSON.stringify(metaObj.screens);
+                        if (JSON.stringify(cachedScreens) !== newJson) {
+                            cachedScreens = metaObj.screens;
+                            const select = document.getElementById('screenSelect');
+                            select.innerHTML = '';
+                            metaObj.screens.forEach(s => {
+                                const opt = document.createElement('option');
+                                opt.value = s.index;
+                                opt.textContent = s.name || `Display ${s.index + 1} (${s.width}x${s.height})`;
+                                if (s.index == metaObj.screenIndex) opt.selected = true;
+                                select.appendChild(opt);
+                            });
+                        }
+                    }
+                } catch (e) {}
+            }
 
-      await setAffinity(rows[0].affinity !== false, true);
+            const blob = new Blob([data.buffer], { type: 'image/jpeg' });
+            const url  = URL.createObjectURL(blob);
+            streamImg.onload = () => {
+                if (previousBlobUrl && previousBlobUrl !== url) URL.revokeObjectURL(previousBlobUrl);
+                previousBlobUrl = url;
+                updateMarkerAndGhostFromInputs();
+            };
+            streamImg.src = url;
+        });
 
-      const hex = (rows[0].text_color || '#EFEFEF').toUpperCase();
-      $("colorPicker").value = hex.toLowerCase();
-      $("colorHex").textContent = hex;
-      const op = (rows[0].opacity ?? 100);
-      $("opacitySlider").value = op;
-      $("opacityDisplay").textContent = op + '%';
+        document.getElementById('screenSelect').addEventListener('change', function () {
+            if (!target) return;
+            socket.emit('send_overlay_action', {
+                targetUsername: target,
+                payload: { action: 'switch_screen', screenIndex: parseInt(this.value) }
+            });
+        });
 
-      await setEnabled(!!rows[0].is_active, true);
-      status("Connected");
-    } else {
-      currentAgent = normalizeAgentName('i.exe');
-      await upsertRow({
-        live_text: "", font_size: 16, pos_x: 100, pos_y: 100,
-        is_active: false, agent: currentAgent, affinity: true,
-        text_color: "#EFEFEF", opacity: 100
-      });
-      $("agentInput").value = currentAgent;
-      $("colorPicker").value = "#efefef";
-      $("colorHex").textContent = "#EFEFEF";
-      $("opacitySlider").value = 100;
-      $("opacityDisplay").textContent = "100%";
-      await setAffinity(true, true);
-      await setEnabled(false, true);
-      status("Connected (new client)");
-    }
-  } catch (e) {
-    status("Connection failed", true);
-  }
-}
+        // ═══════════════════════════════════════════════
+        // Positioning & overlay
+        // ═══════════════════════════════════════════════
+        function getDisplayedImageMetrics() {
+            const wrapRect = streamWrapper.getBoundingClientRect();
+            const wrapperW = wrapRect.width;
+            const wrapperH = wrapRect.height;
+            const targetAspect  = currentScreenWidth / currentScreenHeight;
+            const wrapperAspect = wrapperW / wrapperH;
+            let renderW, renderH, offsetX, offsetY;
+            if (wrapperAspect > targetAspect) {
+                renderH = wrapperH;
+                renderW = wrapperH * targetAspect;
+                offsetX = (wrapperW - renderW) / 2;
+                offsetY = 0;
+            } else {
+                renderW = wrapperW;
+                renderH = wrapperW / targetAspect;
+                offsetX = 0;
+                offsetY = (wrapperH - renderH) / 2;
+            }
+            return { wrapperW, wrapperH, renderW, renderH, offsetX, offsetY };
+        }
 
-// ---------- Bind UI ----------
-function bindUI() {
-  if (IS_FILE) $("fileWarning").style.display = 'block';
+        streamImg.addEventListener('click', (e) => {
+            const wrapRect = streamWrapper.getBoundingClientRect();
+            const clickWrapX = e.clientX - wrapRect.left;
+            const clickWrapY = e.clientY - wrapRect.top;
+            const m = getDisplayedImageMetrics();
+            if (clickWrapX < m.offsetX || clickWrapX > m.offsetX + m.renderW ||
+                clickWrapY < m.offsetY || clickWrapY > m.offsetY + m.renderH) return;
+            const imgX = clickWrapX - m.offsetX;
+            const imgY = clickWrapY - m.offsetY;
+            const relX = Math.round((imgX / m.renderW) * currentScreenWidth);
+            const relY = Math.round((imgY / m.renderH) * currentScreenHeight);
+            posXInput.value = Math.max(0, Math.min(currentScreenWidth,  relX));
+            posYInput.value = Math.max(0, Math.min(currentScreenHeight, relY));
+            updateMarkerAndGhostFromInputs();
+            if (activeGhostText) sendPayload('update', activeGhostText);
+        });
 
-  $("enableToggle").addEventListener('change', e => setEnabled(e.target.checked));
-  $("affinityToggle").addEventListener('change', e => setAffinity(e.target.checked));
+        function updateMarkerAndGhostFromInputs() {
+            const relX = parseInt(posXInput.value) || 0;
+            const relY = parseInt(posYInput.value) || 0;
+            const m = getDisplayedImageMetrics();
+            if (!m.renderW || !m.renderH) return;
+            const domX = m.offsetX + (relX / currentScreenWidth)  * m.renderW;
+            const domY = m.offsetY + (relY / currentScreenHeight) * m.renderH;
+            clickMarker.style.left = `${domX}px`;
+            clickMarker.style.top  = `${domY}px`;
+            clickMarker.classList.remove('hidden');
+            ghostOverlay.style.left = `${domX}px`;
+            ghostOverlay.style.top  = `${domY}px`;
+            updateGhostOverlay();
+        }
 
-  $("messageInput").addEventListener('input', () => pushText($("messageInput").value));
+        function updateGhostOverlay() {
+            if (!activeGhostText || !activeGhostText.trim()) {
+                ghostOverlay.classList.add('hidden');
+                ghostOverlay.textContent = '';
+                return;
+            }
+            const m = getDisplayedImageMetrics();
+            const scaleRatio = m.renderW / (currentScreenWidth || 1920);
+            const baseFontSize = parseInt(fontSizeInput.value) || 18;
+            const scaledFontSize = Math.max(8, baseFontSize * scaleRatio);
+            ghostOverlay.style.fontSize = `${scaledFontSize}px`;
+            ghostOverlay.style.color    = fontColorInput.value;
+            ghostOverlay.style.opacity  = (parseInt(fontOpacityInput.value) || 25) / 100.0;
+            ghostOverlay.textContent    = activeGhostText;
+            ghostOverlay.classList.remove('hidden');
+        }
 
-  // ---- Font size: live push ----
-  $("fontSizeSlider").addEventListener('input', e => {
-    const v = +e.target.value;
-    $("fontSizeDisplay").textContent = v;
-    queueStylePush({ font_size: v });
-  });
-  $("fontDecrease").onclick = () => {
-    const v = Math.max(10, +$("fontSizeSlider").value - 1);
-    $("fontSizeSlider").value = v;
-    $("fontSizeDisplay").textContent = v;
-    queueStylePush({ font_size: v });
-  };
-  $("fontIncrease").onclick = () => {
-    const v = Math.min(72, +$("fontSizeSlider").value + 1);
-    $("fontSizeSlider").value = v;
-    $("fontSizeDisplay").textContent = v;
-    queueStylePush({ font_size: v });
-  };
+        // ═══════════════════════════════════════════════
+        // Realtime / draft input
+        // ═══════════════════════════════════════════════
+        rtInput.addEventListener('input', () => {
+            if (!target) return;
+            activeGhostText = rtInput.value;
+            if (activeGhostText.length > 0) sendPayload('update', activeGhostText);
+            else sendPayload('clear', '');
+            updateMarkerAndGhostFromInputs();
+        });
 
-  // ---- Color: live push ----
-  $("colorPicker").addEventListener('input', e => {
-    const hex = e.target.value.toUpperCase();
-    $("colorHex").textContent = hex;
-    queueStylePush({ text_color: hex });
-  });
+        function clearRealtime() {
+            rtInput.value = '';
+            activeGhostText = '';
+            sendPayload('clear', '');
+            updateMarkerAndGhostFromInputs();
+        }
 
-  // ---- Opacity: live push ----
-  $("opacitySlider").addEventListener('input', e => {
-    const v = +e.target.value;
-    $("opacityDisplay").textContent = v + '%';
-    queueStylePush({ opacity: v });
-  });
+        function sendDraft(action) {
+            const text = document.getElementById('draftText').value;
+            activeGhostText = action === 'update' ? text : '';
+            sendPayload(action, text);
+            updateMarkerAndGhostFromInputs();
+        }
+        function clearDraft() {
+            document.getElementById('draftText').value = '';
+            activeGhostText = '';
+            sendPayload('clear', '');
+            updateMarkerAndGhostFromInputs();
+        }
 
-  // ---- Reset + Agent ----
-  $("resetPosBtn").onclick = resetPosition;
-  $("agentBtn").onclick = () => setAgent($("agentInput").value);
+        function sendPayload(action, text) {
+            if (!target) return;
+            if (!joined) joinAsOperator();
+            const screenIndex = parseInt(document.getElementById('screenSelect').value) || 0;
+            socket.emit('send_overlay_action', {
+                targetUsername: target,
+                payload: {
+                    action, text, screenIndex,
+                    x:        parseInt(posXInput.value)         || 0,
+                    y:        parseInt(posYInput.value)         || 0,
+                    fontSize: parseInt(fontSizeInput.value)     || 18,
+                    color:    fontColorInput.value,
+                    opacity:  (parseInt(fontOpacityInput.value) || 25) / 100.0
+                }
+            });
+        }
 
-  $("agentInput").addEventListener('input', e => {
-    const raw = e.target.value.trim();
-    if (!raw) { e.target.dataset.preview = ''; return; }
-    e.target.dataset.preview = normalizeAgentName(raw);
-  });
+        function clearLive() {
+            streamImg.src = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxIiBoZWlnaHQ9IjEiPjwvc3ZnPg==";
+            document.getElementById('streamPlaceholder').textContent = 'Click "Start capture" to begin streaming';
+            document.getElementById('streamPlaceholder').classList.remove('hidden');
+            clickMarker.classList.add('hidden');
+            ghostOverlay.classList.add('hidden');
+            if (previousBlobUrl) { URL.revokeObjectURL(previousBlobUrl); previousBlobUrl = null; }
+        }
 
-  // ---- Voice ----
-  const rec = setupVoice("messageInput", "adminVoiceStatus", "adminVoiceBtn");
-  $("adminVoiceBtn").onclick = () => {
-    if (recognition) stopVoice("adminVoiceBtn", "adminVoiceStatus");
-    else if (rec) startVoice(rec, "messageInput", "adminVoiceStatus", "adminVoiceBtn");
-  };
-}
+        // ═══════════════════════════════════════════════
+        // Voice-to-Text — MOBILE-AWARE
+        //
+        // Mobile (especially Android Chrome) sends the ENTIRE
+        // transcript on every event instead of just new chunks.
+        // iOS Safari doesn't support `continuous` well.
+        //
+        // Strategy: use a DEDUPE pass. Keep the last committed
+        // text and only append what's genuinely new. If mobile
+        // sends the full transcript, we detect and skip the
+        // already-seen prefix.
+        // ═══════════════════════════════════════════════
+        let recognition = null;
+        let isListening = false;
+        let voiceBaseText = '';         // frozen input when mic started
+        let voiceCommittedText = '';    // all finalized text so far (single source of truth)
+        let voiceLastFinalFromEvent = ''; // for mobile dedupe: full text seen last event
+        let restarting = false;
 
-// ---------- Boot ----------
-(function boot() {
-  bindUI();
+        function createRecognition() {
+            const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SR) return null;
 
-  const urlHwid = params.get('hwid');
-  if (urlHwid) { autoLoad(urlHwid); return; }
+            const rec = new SR();
+            // On mobile, `continuous = true` is unreliable; we still set it
+            // because Android honors it, and iOS ignores it gracefully.
+            rec.continuous = true;
+            rec.interimResults = true;
+            rec.lang = 'en-US';
+            rec.maxAlternatives = 1;
 
-  const saved = localStorage.getItem("hwid");
-  if (saved) { autoLoad(saved); return; }
+            rec.onstart = () => {
+                isListening = true;
+                restarting = false;
+                const btn = document.getElementById('voiceBtn');
+                btn.classList.add('mic-btn-active');
+                btn.innerHTML = '🔴';
+                btn.title = 'Stop listening';
+            };
 
-  $("hwidDisplay").textContent = "Open with ?hwid=YOUR_HWID in the URL";
-  status("No HWID provided", true);
-})();
+            rec.onresult = (e) => {
+                let interim = '';
+                let newFinal = '';
 
-document.addEventListener('contextmenu', e => e.preventDefault());
-</script>
+                // Collect everything the browser gave us in this event
+                for (let i = e.resultIndex; i < e.results.length; i++) {
+                    const t = e.results[i][0].transcript;
+                    if (e.results[i].isFinal) newFinal += t;
+                    else interim += t;
+                }
+
+                // MOBILE DEDUPE:
+                // Android Chrome often sends the ENTIRE accumulated final
+                // transcript on each final result instead of just the delta.
+                // If the new final starts with (or equals) what we already
+                // committed, only keep the genuinely new suffix.
+                if (newFinal) {
+                    const trimmedNew = newFinal.trim();
+                    const committedLower = voiceCommittedText.toLowerCase();
+                    const newLower = trimmedNew.toLowerCase();
+
+                    if (newLower === committedLower) {
+                        // Exact duplicate → ignore entirely
+                        newFinal = '';
+                    } else if (newLower.startsWith(committedLower) && committedLower.length > 0) {
+                        // New final contains the old committed text as a prefix
+                        // → only keep the delta
+                        newFinal = trimmedNew.substring(voiceCommittedText.length).trim();
+                    } else if (committedLower.startsWith(newLower) && newLower.length > 0) {
+                        // We somehow have more than what the API reports → ignore
+                        newFinal = '';
+                    }
+                    // else: it's genuinely new, keep as-is
+                }
+
+                if (newFinal) {
+                    voiceCommittedText = (voiceCommittedText + ' ' + newFinal)
+                        .replace(/\s+/g, ' ').trim();
+                }
+
+                // Rebuild display from frozen base + committed + interim
+                let display = voiceBaseText;
+                if (voiceCommittedText) display += (display ? ' ' : '') + voiceCommittedText;
+                if (interim) display += (display ? ' ' : '') + interim.trim();
+
+                rtInput.value = display;
+                rtInput.dispatchEvent(new Event('input', { bubbles: true }));
+            };
+
+            rec.onerror = (e) => {
+                console.warn('[voice] error:', e.error);
+                if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
+                    alert('Microphone access denied. Please allow microphone permissions in your browser settings.');
+                    stopVoiceInput();
+                } else if (e.error === 'audio-capture') {
+                    alert('No microphone found on this device.');
+                    stopVoiceInput();
+                } else if (e.error === 'network') {
+                    alert('Speech recognition needs an internet connection.');
+                    stopVoiceInput();
+                } else if (e.error === 'no-speech') {
+                    // Silent, will auto-restart via onend
+                }
+            };
+
+            rec.onend = () => {
+                if (isListening && !restarting) {
+                    restarting = true;
+                    // Longer delay on mobile — gives the mic time to fully release
+                    const delay = isMobile ? 350 : 150;
+                    setTimeout(() => {
+                        try { rec.start(); } catch (_) { restarting = false; }
+                    }, delay);
+                } else {
+                    const btn = document.getElementById('voiceBtn');
+                    btn.classList.remove('mic-btn-active');
+                    btn.innerHTML = '🎤';
+                    btn.title = 'Voice to text';
+                    isListening = false;
+                    restarting = false;
+                }
+            };
+
+            return rec;
+        }
+
+        function toggleVoiceInput() {
+            if (isListening) stopVoiceInput();
+            else startVoiceInput();
+        }
+
+        function startVoiceInput() {
+            if (!recognition) recognition = createRecognition();
+            if (!recognition) {
+                alert('Speech recognition is not supported on this browser.\n\nOn iPhone, please use Safari (iOS 14.5+).\nOn Android, please use Chrome.');
+                return;
+            }
+
+            // Freeze the current input as the immutable base for this session
+            voiceBaseText = rtInput.value.trim();
+            voiceCommittedText = '';
+            voiceLastFinalFromEvent = '';
+            isListening = true;
+            restarting = false;
+
+            try {
+                recognition.start();
+            } catch (e) {
+                console.warn('[voice] start failed:', e);
+                isListening = false;
+                // If it's already started, stop and retry
+                try { recognition.stop(); } catch (_) {}
+                setTimeout(() => {
+                    try { recognition.start(); } catch (_) { isListening = false; }
+                }, 200);
+            }
+        }
+
+        function stopVoiceInput() {
+            isListening = false;
+            restarting = false;
+            if (recognition) {
+                try { recognition.stop(); } catch (_) {}
+            }
+            // Commit current input as new base so next session appends correctly
+            voiceBaseText = rtInput.value.trim();
+            voiceCommittedText = '';
+            voiceLastFinalFromEvent = '';
+            const btn = document.getElementById('voiceBtn');
+            btn.classList.remove('mic-btn-active');
+            btn.innerHTML = '🎤';
+            btn.title = 'Voice to text';
+        }
+
+        // ═══════════════════════════════════════════════
+        // Misc UI
+        // ═══════════════════════════════════════════════
+        function copyShareLink(btn) {
+            navigator.clipboard.writeText(location.href).then(() => {
+                const old = btn.innerHTML;
+                btn.innerHTML = '✓ Copied';
+                btn.classList.add('text-emerald-400');
+                setTimeout(() => {
+                    btn.innerHTML = old;
+                    btn.classList.remove('text-emerald-400');
+                }, 1200);
+            }).catch(() => prompt('Link:', location.href));
+        }
+
+        function toggleInWindowFullscreen() {
+            const isFull = streamWrapper.classList.toggle('in-window-fullscreen');
+            document.getElementById('fullscreenBtnText').textContent = isFull ? '✕' : '⛶';
+            setTimeout(updateMarkerAndGhostFromInputs, 60);
+        }
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && streamWrapper.classList.contains('in-window-fullscreen')) {
+                toggleInWindowFullscreen();
+            }
+        });
+
+        const resizeObserver = new ResizeObserver(() => updateMarkerAndGhostFromInputs());
+        resizeObserver.observe(streamWrapper);
+
+        // Pre-init voice recognition
+        if (window.SpeechRecognition || window.webkitSpeechRecognition) {
+            recognition = createRecognition();
+        }
+
+        function setViewportHeight() {
+            document.documentElement.style.setProperty('--vh', `${window.innerHeight * 0.01}px`);
+        }
+        setViewportHeight();
+        window.addEventListener('resize', setViewportHeight);
+        window.addEventListener('orientationchange', () => setTimeout(setViewportHeight, 100));
+    </script>
 </body>
 </html>
